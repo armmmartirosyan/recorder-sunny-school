@@ -1,32 +1,68 @@
-import React, {useEffect, useState} from 'react';
+import React, {Fragment, JSX, useEffect, useState} from 'react';
+import {isEmpty} from "lodash";
+import {DeviceGroup} from "../DeviceGroup";
+import {IDeviceListProps} from "../../models/component-models";
+import "./DeviceList.scss";
 
-export function DeviceList() {
-    const [devices, setDevices] = useState<MediaDeviceInfo[]>();
+export function DeviceList({
+                               currentVideoDevice,
+                               currentAudioDevice,
+                               mediaService,
+                               changeVideoDevice,
+                               changeAudioDevice
+                           }: IDeviceListProps): JSX.Element {
+    const [cameras, setCameras] = useState<MediaDeviceInfo[]>();
+    const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>();
+    const [speakers, setSpeakers] = useState<MediaDeviceInfo[]>();
 
-    useEffect( () => {
-        navigator.mediaDevices.enumerateDevices().then((devices) => {
-            setDevices(devices);
-        });
-    }, []);
+    useEffect(() => {
+        if (mediaService) {
+            mediaService
+                .getDevices()
+                .then((devices) => {
+                    setCameras(devices.cameras);
+                    setSpeakers(devices.speakers);
+                    setMicrophones(devices.microphones);
+                });
+        }
+    }, [mediaService]);
 
-    if (!devices) {
-        return null;
+    if (
+        isEmpty(cameras) &&
+        isEmpty(speakers) &&
+        isEmpty(microphones)
+    ) {
+        return <Fragment/>;
     }
 
     return (
-        <>
-            Audio devices
-            <ul id="audioList">
-                {devices.filter(device => device.kind.includes("audio")).map((device, index) => (
-                    <li key={device.label + index}>{device.label}</li>
-                ))}
-            </ul>
-            video devices
-            <ul id="videoList">
-                {devices.filter(device => device.kind.includes("video")).map((device, index) => (
-                    <li key={device.label + index}>{device.label}</li>
-                ))}
-            </ul>
-        </>
+        <div className="devices_container">
+            {cameras && (
+                <DeviceGroup
+                    title="cameras"
+                    devices={cameras}
+                    onDeviceClick={changeVideoDevice}
+                    currentDevice={currentVideoDevice}
+                />
+            )}
+
+            {microphones && (
+                <DeviceGroup
+                    title="microphones"
+                    devices={microphones}
+                    onDeviceClick={changeAudioDevice}
+                    currentDevice={currentAudioDevice}
+                />
+            )}
+
+            {speakers && (
+                <DeviceGroup
+                    title="speakers"
+                    devices={speakers}
+                    onDeviceClick={changeAudioDevice}
+                    currentDevice={currentAudioDevice}
+                />
+            )}
+        </div>
     );
 }

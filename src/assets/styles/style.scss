@@ -22,12 +22,6 @@ body {
   width: 100vw;
   height: 100vh;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.video_container {
-  width: 50%;
-  height: 50%;
+  gap: 5rem;
+  padding: 5rem;
 }

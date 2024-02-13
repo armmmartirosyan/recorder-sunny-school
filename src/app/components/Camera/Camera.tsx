@@ -1,34 +1,34 @@
-import React from 'react';
-
-interface ICamera {
-    mediaStream: any,
-    handleRecord: any,
-    handleStop: any
-}
+import React, {JSX} from 'react';
+import {ICameraProps} from "../../models/component-models";
+import "./Camera.scss";
 
 export function Camera({
-                           mediaStream,
-                           handleRecord,
-                           handleStop
-                       }: ICamera) {
+                           onRecord,
+                           onStop,
+                           isPlaying
+                       }: ICameraProps): JSX.Element {
     return (
-        <>
+        <div className="video_container">
             <video
                 id="video"
-                className="video_container"
+                className="video"
             />
 
-            {(!mediaStream) && (
-                <button onClick={handleRecord}>
+            {(isPlaying) ? (
+                <button
+                    onClick={onStop}
+                    className="action_button"
+                >
+                    Stop
+                </button>
+            ) : (
+                <button
+                    onClick={onRecord}
+                    className="action_button"
+                >
                     Record
                 </button>
             )}
-
-            {(mediaStream) && (
-                <button onClick={handleStop}>
-                    Stop
-                </button>
-            )}
-        </>
+        </div>
     );
 }
