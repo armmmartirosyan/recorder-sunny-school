@@ -10,11 +10,18 @@
   background-color: black;
 }
 
-.action_button {
+.action_buttons_box {
   position: absolute;
-  bottom: .2rem;
-  right: .2rem;
+  bottom: 0.2rem;
+  right: 0.2rem;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2rem;
+}
+
+.action_button {
   cursor: pointer;
   border: 0;
   background-color: white;

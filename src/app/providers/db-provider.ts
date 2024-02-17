@@ -1,11 +1,9 @@
-const DB_NAME: string = "recorder-db";
-const DB_VERSION: number = 1;
-const STORE_NAME = "recording";
+import { DB_VERSION, STORE_NAME, DB_NAME } from "../constants/index";
 
 class DbProvider {
   db: IDBDatabase | null = null;
 
-  openDB() {
+  openDB(onAllowRecord: VoidFunction) {
     if (this.db) {
       return this.db;
     }
@@ -25,49 +23,53 @@ class DbProvider {
     const requset = indexedDB.open(DB_NAME, DB_VERSION);
 
     requset.onerror = this.onError;
-    requset.onupgradeneeded = this.onUpgradeNeeded;
-    requset.onsuccess = this.onSuccess;
+    requset.onupgradeneeded = (e) => this.onUpgradeNeeded(e, onAllowRecord);
+    requset.onsuccess = (e) => this.onSuccess(e, onAllowRecord);
   }
 
   private onError(event: Event) {
-    const { code, message, name } = (event.target as IDBOpenDBRequest).error!;
+    const { code, message, name } =
+      (event.target as IDBOpenDBRequest).error || {};
 
     console.error(`Error code - ${code}: ${message}, ${name}`);
   }
 
-  private onUpgradeNeeded(event: IDBVersionChangeEvent) {
+  private onUpgradeNeeded(
+    event: IDBVersionChangeEvent,
+    onAllowRecord: VoidFunction
+  ) {
     this.db = (event.target as IDBOpenDBRequest).result;
 
     if (!this.db.objectStoreNames.contains(STORE_NAME)) {
-      console.log(`Creating object store: ${STORE_NAME}`);
       this.db.createObjectStore(STORE_NAME, { keyPath: "chunkID" });
     }
+
+    onAllowRecord();
   }
 
-  private onSuccess(event: Event) {
+  private onSuccess(event: Event, onAllowRecord: VoidFunction) {
     this.db = (event.target as IDBOpenDBRequest).result;
-
-    console.log("IndexedDB is opened.");
+    onAllowRecord();
   }
 
-  getItems() {
+  async getItems() {
     if (!this.db) return;
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, "readonly");
+      const transaction = this.db!.transaction(STORE_NAME, "readwrite");
       const objectStore = transaction.objectStore(STORE_NAME);
       const requset = objectStore.getAll();
 
       requset.onsuccess = (event: Event) => {
         resolve((event.target as IDBOpenDBRequest).result);
       };
-      requset.onerror = (event: Event) => {
+      requset.onerror = () => {
         reject(new Error("Can't get items."));
       };
     });
   }
 
-  addItem(item: any) {
+  async addItem(item: any) {
     if (!this.db) return;
 
     return new Promise((resolve, reject) => {
@@ -75,10 +77,27 @@ class DbProvider {
       const objectStore = transaction.objectStore(STORE_NAME);
       const requset = objectStore.add(item);
 
-      requset.onsuccess = (event: Event) => {
+      requset.onsuccess = () => {
         resolve(item);
       };
-      requset.onerror = (event: Event) => {
+      requset.onerror = () => {
+        reject(new Error("Couldn't add item."));
+      };
+    });
+  }
+
+  async clear() {
+    if (!this.db) return;
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(STORE_NAME, "readwrite");
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const requset = objectStore.clear();
+
+      requset.onsuccess = () => {
+        resolve(true);
+      };
+      requset.onerror = () => {
         reject(new Error("Couldn't add item."));
       };
     });
