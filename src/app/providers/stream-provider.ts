@@ -1,12 +1,9 @@
 import { IConstraints, IStartStream } from "../models/provider-models";
-import { recorderProvider } from "./recorder-provider";
 
 class StreamProvider {
   private stream: MediaStream | undefined;
   private lastVideoDeviceId: string | undefined = undefined;
   private lastAudioDeviceId: string | undefined = undefined;
-  private replayRecording = false;
-
   private constraints: IConstraints = {
     audio: {
       deviceId: this.lastAudioDeviceId,
@@ -55,11 +52,6 @@ class StreamProvider {
       });
 
       this.stream = stream;
-
-      if (this.replayRecording) {
-        recorderProvider.startRecording(stream, () => {});
-        this.replayRecording = false;
-      }
       onStart();
     } catch (e) {
       console.log("Error trying to start stream - ", e);
@@ -70,11 +62,6 @@ class StreamProvider {
     if (!this.stream) return;
 
     if (onStop) onStop();
-
-    if (recorderProvider.getRecorder()) {
-      recorderProvider.stopRecording();
-      this.replayRecording = true;
-    }
 
     this.stream.getTracks().forEach((track) => track.stop());
   }

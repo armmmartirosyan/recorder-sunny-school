@@ -1,6 +1,9 @@
 import { IMediaTracks, Track } from "./provider-models";
 
-export type changeDeviceFunction = (deviceId: string) => Promise<void>;
+export type changeDeviceFunction = (
+  deviceId: string,
+  keyName: string
+) => Promise<void>;
 
 export interface ICameraProps {
   onDeviceChange: (args: IMediaTracks) => void;
@@ -18,4 +21,5 @@ export interface IDeviceGroupProps {
   title: string;
   onDeviceClick?: changeDeviceFunction;
   currentDevice: Track;
+  keyName: string;
 }

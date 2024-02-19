@@ -6,6 +6,7 @@ import { devicesProvider } from "../../providers/devices-provider";
 import { IGetDevices } from "../../models/provider-models";
 import { streamProvider } from "../../providers/stream-provider";
 import { MediaContext } from "../../contexts";
+import { recorderProvider } from "../../providers/recorder-provider";
 import "./DeviceList.scss";
 
 export function DeviceList({
@@ -23,24 +24,25 @@ export function DeviceList({
     toggleStreamOn(true);
   };
 
-  const handleChangeVideoDevice = async (
-    deviceId: string | undefined
+  const handleDeviceChange = async (
+    deviceId: string | undefined,
+    keyName: string
   ): Promise<void> => {
-    await streamProvider.startStream({
-      onStart,
-      onDeviceChange,
-      videoDeviceID: deviceId,
-    });
-  };
+    const restartRecordinng = recorderProvider.isRecording();
 
-  const handleChangeAudioDevice = async (
-    deviceId: string | undefined
-  ): Promise<void> => {
+    if (restartRecordinng) {
+      recorderProvider.stopRecording();
+    }
+
     await streamProvider.startStream({
       onStart,
       onDeviceChange,
-      audioDeviceID: deviceId,
+      [keyName]: deviceId,
     });
+
+    if (restartRecordinng) {
+      recorderProvider.startRecording(streamProvider.getStream()!, () => {});
+    }
   };
 
   useEffect(() => {
@@ -61,8 +63,9 @@ export function DeviceList({
         <DeviceGroup
           title="cameras"
           devices={cameras}
-          onDeviceClick={handleChangeVideoDevice}
+          onDeviceClick={handleDeviceChange}
           currentDevice={currentVideoDevice}
+          keyName="videoDeviceID"
         />
       )}
 
@@ -70,8 +73,9 @@ export function DeviceList({
         <DeviceGroup
           title="microphones"
           devices={microphones}
-          onDeviceClick={handleChangeAudioDevice}
+          onDeviceClick={handleDeviceChange}
           currentDevice={currentAudioDevice}
+          keyName="audioDeviceID"
         />
       )}
 
@@ -79,8 +83,9 @@ export function DeviceList({
         <DeviceGroup
           title="speakers"
           devices={speakers}
-          onDeviceClick={handleChangeAudioDevice}
+          onDeviceClick={handleDeviceChange}
           currentDevice={currentAudioDevice}
+          keyName="audioDeviceID"
         />
       )}
     </div>

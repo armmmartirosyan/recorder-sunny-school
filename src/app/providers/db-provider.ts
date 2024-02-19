@@ -3,7 +3,7 @@ import { DB_VERSION, STORE_NAME, DB_NAME } from "../constants/index";
 class DbProvider {
   db: IDBDatabase | null = null;
 
-  openDB(onAllowRecord: VoidFunction) {
+  openDB(onDBReady: VoidFunction) {
     if (this.db) {
       return this.db;
     }
@@ -23,8 +23,8 @@ class DbProvider {
     const requset = indexedDB.open(DB_NAME, DB_VERSION);
 
     requset.onerror = this.onError;
-    requset.onupgradeneeded = (e) => this.onUpgradeNeeded(e, onAllowRecord);
-    requset.onsuccess = (e) => this.onSuccess(e, onAllowRecord);
+    requset.onupgradeneeded = (e) => this.onUpgradeNeeded(e, onDBReady);
+    requset.onsuccess = (e) => this.onSuccess(e, onDBReady);
   }
 
   private onError(event: Event) {
@@ -36,20 +36,20 @@ class DbProvider {
 
   private onUpgradeNeeded(
     event: IDBVersionChangeEvent,
-    onAllowRecord: VoidFunction
-  ) {
+    onDBReady: VoidFunction
+  ): void {
     this.db = (event.target as IDBOpenDBRequest).result;
 
     if (!this.db.objectStoreNames.contains(STORE_NAME)) {
       this.db.createObjectStore(STORE_NAME, { keyPath: "chunkID" });
     }
 
-    onAllowRecord();
+    onDBReady();
   }
 
-  private onSuccess(event: Event, onAllowRecord: VoidFunction) {
+  private onSuccess(event: Event, onDBReady: VoidFunction): void {
     this.db = (event.target as IDBOpenDBRequest).result;
-    onAllowRecord();
+    onDBReady();
   }
 
   async getItems() {
@@ -98,7 +98,7 @@ class DbProvider {
         resolve(true);
       };
       requset.onerror = () => {
-        reject(new Error("Couldn't add item."));
+        reject(new Error("Couldn't clear items."));
       };
     });
   }
